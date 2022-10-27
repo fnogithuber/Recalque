@@ -1,12 +1,13 @@
-import tkinter.messagebox
+#region: bibliotecas utilizadas para o aplicativo
 from tkinter import *
 from tkinter import ttk
 from tkinter.ttk import Combobox
 import pandas as pd
 import xlrd
 from xlrd import *
+#endregion
 
-
+#region: diâmetros comerciais considerados para a tubulação
 diam13 = pd.Series({'DIÂMETRO': '13mm', 'curva de 90°': 0.2, 'curva de 45°': 0.2, 'Registro gaveta': 0.1, 'Registro de globo': 4.9,
                     'Válvula de pé e crivo': 3.6, 'Válvula de retenção tipo leve': 1.1, 'Válvula de retenção tipo pesado': 1.6})
 
@@ -55,18 +56,17 @@ diam350 = pd.Series({'DIÂMETRO': '350mm', 'curva de 90°': 4.4, 'curva de 45°'
 
 df = pd.DataFrame([diam13, diam19, diam25, diam32, diam38, diam50, diam63, diam75, diam100, diam125, diam150, diam200,
                    diam250, diam300, diam350])
+#endregion
 
-
-
-
-
+#region: tela de inserção de dados
 janela = Tk()
 janela.title("Projeto de Recalque")
 janela.geometry("950x500")
 janela.resizable(width=False, height=False)
 janela.configure(bg='#0e89c7')
+#endregion
 
-
+#region: calculo da perda de carga da instalação
 global curva_90_perda_s
 global curva_45_perda_s
 global registro_gaveta_perda_s
@@ -428,12 +428,9 @@ def calculo():
         abre_resultados()
 
         apagar_campos()
+#endregion
 
-
-
-
-
-
+#region: reset dos dados da tela
 def apagar_campos():
     campo_altura_recalque.delete(0, END)
     campo_altura_succao.delete(0, END)
@@ -454,7 +451,9 @@ def apagar_campos():
     combo_registro_globo_r.current(0)
     combo_retencao_leve_r.current(0)
     combo_retencao_pesada_r.current(0)
+#endregion
 
+#region: resultado final na tela
 def abre_resultados():
     tela_res = Tk()
     tela_res.title("Resultado")
@@ -486,12 +485,9 @@ def abre_resultados():
 
 
     janela.winfo_screen()
+#endregion
 
-
-
-
-
-
+#region: layout da tela
 label01 = Label(janela, text="Vazão em (L/s)", bg='#0e89c7', font=('Arial bold', 10))
 label01.place(x=20, y=20)
 
@@ -631,3 +627,4 @@ btn_calculo.place(x=800, y=400)
 
 
 janela.mainloop()
+#endregion
