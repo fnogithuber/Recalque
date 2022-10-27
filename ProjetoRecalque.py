@@ -1,10 +1,12 @@
 #region: bibliotecas utilizadas para o aplicativo
 from tkinter import *
 from tkinter import ttk
+import tkinter
 from tkinter.ttk import Combobox
 import pandas as pd
 import xlrd
 from xlrd import *
+import math
 #endregion
 
 #region: diâmetros comerciais considerados para a tubulação
@@ -96,6 +98,25 @@ def calculo():
     if campo_vazao.get() == '' or campo_horas.get() == '' or campo_comprimento_succao.get() == '' or campo_comprimento_recalque.get() == '' or campo_altura_succao.get() == '' or campo_altura_recalque.get() == '':
         tkinter.messagebox.showinfo("Aviso", "Campos não preenchidos!")
     else:
+        """
+        Corrigindo a vazão de L/s para m³/h:
+
+            vazao = float(input())
+            horas = float(input())
+
+            vazao_ajust = lambda vazao, horas: (vazao*3600)/(1000)
+
+        Sabe-se que o diâmetro do recalque é calculado por:
+
+            vazao_ajust = 43.2  # conversão de 12 L/s para m³/h
+            tempo_func = 12 # horas
+
+            diam_rec = lambda vazao, tempo_func: 1.3*math.pow((tempo_func/24), 1/4)*math.sqrt(vazao)
+            print (diam_rec(vazao, tempo_func))
+
+        A partir disso, estima-se que o diâmetro de sucção é imediatamente superior ao diâmetro de recalque em metros
+        """
+
         vazao_ajustada = (float(campo_vazao.get()) * 24) / float(campo_horas.get())
         vazao_ajustada_cubic_meters = vazao_ajustada / 1000
         vazao_ajustada_cubic_hours = vazao_ajustada_cubic_meters * 3600
@@ -185,11 +206,52 @@ def calculo():
             diametro_succao = 750
             diametro_recalque = 700
 
+        """
+        Para valores de diâmetro calculado não coincidindo com diâmetro comercial, deve-se calcular a
+        velocidade ecônomica e partir dela calcular os diâmetros compátivel:
+
+        veloc_econ_suc = lambda vazao, diam_rec: ((4*vazao)/(math.pi*np.power(diam_suc(vazao, tempo_func), 2)))
+        print (veloc_econ(vazao, diam_rec))
+
+        veloc_econ_rec = lambda vazao, diam_rec: ((4*vazao)/(math.pi*np.power(diam_rec(vazao, tempo_func), 2)))
+        print (veloc_econ(vazao, diam_rec)) 
+
+        Onde o diam_rec = diâmetro de recalque e diam_suc = diâmetro de sucção
+
+        Logo, o contrário também é uma verdade:
+
+        diam_suc = lambda vazao, veloc_econ_suc: math.sqrt((4*vazao)/(math.pi*veloc_econ_suc))
+        diam_rec = lambda vazao, veloc_econ_rec: math.sqrt((4*vazao)/(math.pi*veloc_econ_rec))
+        """
+
         velocidade_econ_succao = (4 * vazao_ajustada_cubic_meters) / (3.1415 * (diametro_succao / 1000)**2)
         velocidade_econ_succao = round(velocidade_econ_succao, 3)
 
         velocidade_econ_recalque = (4 * vazao_ajustada_cubic_meters) / (3.1415 * (diametro_recalque / 1000)**2)
         velocidade_econ_recalque = round(velocidade_econ_recalque, 3)
+
+        """
+        Para a altura manômétrica de recalque, têm-se que:
+        
+        alt_manom_rec = lambda alt_geom_rec, perda_carga_unitaria, comp_tot_tub, veloc_econ_rec: alt_geom_rec() + (perda_carga_unitaria() * comp_tot_tub()) + (np.power(vel_med_rec, 2)/(2*acel_grav))
+        
+        Para esse calculo, são necessárias a determinação de algumas incógnitas:
+        Considerou-se a viscosidade da água: visc_agua = 9800 N*m³/s com temperatura fixa
+        Considerou-se aceleração da gravidade teórica: acel_grav = 9,8 m/s²
+
+        perda_carga_unitaria = lambda fator_atrito_rec, acel_grav, diam_rec, vazao: 8*fator_atrito_rec()*(np.power(vazao, 2)/(math.pi*acel_grav*np.power(diam_rec(vazao, tempo_func), 5)))
+        fator_atrito_rec = lambda rugosidade, diam_rec, num_reynolds_rec: np,power(1/(-1,8*math.log((np.power((rugosidade/diam_rec(vazao, tempo_func)/3,7), 1,11) + (6,9/num_reynolds_rec())),10)), 2)
+        num_reynolds_rec = lambda vazao, diam_rec, visc_agua: (4*vazao)/(math.pi*diam_rec(vazao, tempo_func)*visc_agua)
+
+        Para o comprimento total da tubulação (comp_tot_tub) é necessário o comprimento real da tubulação de recalque e o comprimento
+        equivalente nas conexões da tubulação de recalque. (Comprimento real - Comprimento equivalente). Verificar como isso será considerado.
+
+        Obs: a altura manométrica de sucção recebe o mesmo cálculo mas considera o diâmetro de sucção.
+
+        Por fim, a altura geométrica é: 
+
+        alt_manom_final = alt_manom_rec + alt_marom_suc
+        """
 
         altura_succao = float(campo_altura_succao.get())
         altura_recalque = float(campo_altura_recalque.get())
